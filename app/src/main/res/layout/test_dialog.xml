@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="450dp"
+    android:background="@color/testColor"
+    android:layout_height="550dp">
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        >
+
+
+        <LinearLayout
+            android:id="@+id/linearLayout11"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_costum"
+            android:orientation="vertical">
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/linearLayout11"
+            android:layout_alignTop="@+id/linearLayout11"
+            android:layout_marginLeft="28dp"
+            android:layout_marginTop="-10dp"
+            android:background="@android:color/black"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:text="@string/message"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:padding="7dp"
+            android:text="השיעור השבוע מפי הרב משה קפלן לאחר קבלת שבת"
+            android:textColor="@android:color/black"
+            android:textSize="25sp" />
+
+    </RelativeLayout>
+
+</RelativeLayout>

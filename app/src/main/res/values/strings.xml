@@ -1,4 +1,17 @@
 <resources>
     <string name="app_name">Zmanim</string>
-    <string name="add_text">Add text</string>
+    <string name="zmanim">לוח זמנים "עיתים לבינה"</string>
+    <string name="message">הודעות</string>
+    <string name="zmani_tefilot">זמני תפילות</string>
+    <string name="press_again">לחץ עוד %1$d לחיצות כדי להיכנס כמנהל</string>
+    <string name="set_password">הכנס מספר</string>
+    <string name="wrong_password">סיסמה שגויה, נסה שנית</string>
+    <string name="setings">הגדרות</string>
+    <string name="message_setting">עריכת הודעות</string>
+    <string name="zemanim_setting">עריכת זמני תפילות</string>
+    <string name="Location_setting">עריכת מיקום</string>
+    <string name="add_message">הוסף הודעה</string>
+    <string name="add">הוסף</string>
+
+
 </resources>

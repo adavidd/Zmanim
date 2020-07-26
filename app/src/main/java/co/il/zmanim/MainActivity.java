@@ -1,48 +1,178 @@
 package co.il.zmanim;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 
-import android.annotation.SuppressLint;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
 import android.lib.widget.verticalmarqueetextview.VerticalMarqueeTextView;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.TextClock;
-import android.widget.TextView;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Toast;
 
-import com.example.dafyomilibrary.DafYomiCalculator;
-import com.example.dafyomilibrary.DafYomiDetailes;
 import com.google.gson.Gson;
-
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import java.util.Calendar;
 import java.util.Objects;
+import java.util.Observable;
+
+import co.il.zmanim.room.MessageDatabase;
+import co.il.zmanim.room.ZemanimObject;
+import co.il.zmanim.utils.ActivityRunning;
+import co.il.zmanim.utils.FragmentHelper;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ManagerLoginDialog.ManagerLoginDialogListener,
+        ManagerFragment.ManagerFragmentListener,
+        WallFragment.WallFragmentListener, AddMessageDialog.AddMessageDialogListener, java.util.Observer {
 
 
-    private TextView mDafYomiTV;
-    private TextClock mTimeTC;
-    private VerticalMarqueeTextView mZemanimTv;
+    private static final String TAG = MainActivity.class.getSimpleName();
+    private int managerBtnClicked = 5;
+    private Toast toast;
+    private boolean dialogOpen;
+    private ManagerLoginDialog managerLoginDialog;
+    private VerticalMarqueeTextView mMessagesTv;
+    private MainViewModel model;
+    private FragmentHelper mFragmentHelper;
+    private ZemanimObject zemanimObject;
+    private WallFragment mWallFragment;
+    private ManagerFragment mManagerFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         setContentView(R.layout.activity_main);
 
+
         initViews();
-        setCurrentTime();
-        setCurrentEnDate();
-        setTheDafYomi();
+        setLiveData();
         readTxtFile();
+        ObservableObject.getInstance().addObserver(this);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                dataBaseTest();
+            }
+        }).start();
+    }
+
+
+    private void dataBaseTest() {
+
+        MessageDatabase messageDatabase = MessageDatabase.getInstance(this);
+        messageDatabase.messageDao().getMessagesList();
+
+        MessageObject messageObject = new MessageObject("asdasd", 21323,3123213);
+        messageDatabase.messageDao().insertMessage(messageObject);
+
+
+        messageDatabase.messageDao().getMessagesList();
+
+
 
     }
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+//        setLiveData();
+    }
+
+
+
+
+
+    @Override
+    public void onBackPressed() {
+
+        if (mFragmentHelper.isCurrent(ManagerFragment.TAG)){
+
+            setWallFragment(zemanimObject);
+
+        }else {
+
+            super.onBackPressed();
+        }
+
+    }
+
+
+
+
+
+
+    private void setLiveData() {
+
+        model.getFruitList().observe(this, new Observer<String>() {
+            @Override
+            public void onChanged(String message) {
+                // update UI
+                mWallFragment.messageChanged(message);
+
+            }
+        });
+
+
+    }
+
+
+    private void initViews() {
+
+        model = new ViewModelProvider(this).get(MainViewModel.class);
+        mFragmentHelper = new FragmentHelper(this, new ActivityRunning());
+
+
+    }
+
+
+
+    private void setWallFragment(ZemanimObject zemanimObject) {
+
+        if (mWallFragment == null) {
+            mWallFragment = WallFragment.newInstance(zemanimObject);
+        }
+
+        mFragmentHelper.replaceFragment(R.id.MA_content_frame_FL, mWallFragment, WallFragment.TAG, null);
+
+    }
+
+
+
+
+    private void managerLogin() {
+
+        managerLoginDialog = new ManagerLoginDialog();
+        managerLoginDialog.showDialog(this, this);
+
+
+    }
+
+
+    @Override
+    public void onDialogCancel() {
+        dialogOpen = false;
+
+    }
+
+
 
 
     private void readTxtFile() {
@@ -55,31 +185,16 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        ZemanimObject zemanimObject = gson.fromJson(txt, ZemanimObject.class);
+         zemanimObject = gson.fromJson(txt, ZemanimObject.class);
+        setWallFragment(zemanimObject);
 
-        setZmanimViews(zemanimObject);
+
+
 
     }
 
 
 
-
-
-    private void setZmanimViews(ZemanimObject zemanimObject) {
-
-        SimpleDateFormat displayFormat = new SimpleDateFormat("HH:mm:ss");
-        SimpleDateFormat parseFormat = new SimpleDateFormat("hh:mm:ss a");
-        Date date = null;
-        try {
-            date = parseFormat.parse(zemanimObject.getItimObjectList().get(0).getShkiah() + " PM");
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
-//        mZemanimTv.setText(displayFormat.format(date));
-        mZemanimTv.setText(zemanimObject.getItimObjectList().get(0).toString());
-
-    }
 
 
 
@@ -105,45 +220,96 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+    @Override
+    public void onLoginClicked(String password) {
 
-    private void initViews() {
+        if (password.equals("1234")) {
 
-        mDafYomiTV = findViewById(R.id.MA_DafYomiTV);
-        mTimeTC = findViewById(R.id.MA_TimeTC);
-        mZemanimTv = findViewById(R.id.MA_zmanim_TV);
+            managerLoginDialog.cancelDialog();
 
+            if (mManagerFragment == null) {
+                mManagerFragment = ManagerFragment.newInstance();
+            }
+
+            mFragmentHelper.replaceFragment(R.id.MA_content_frame_FL, mManagerFragment, ManagerFragment.TAG, null);
+
+//            Intent intent = new Intent(this, ManagerActivity.class);
+//            intent.putExtra("MODEL", (Parcelable) model);
+//            startActivity(intent);
+
+        } else {
+
+            Toast.makeText(this, getResources().getString(R.string.wrong_password), Toast.LENGTH_SHORT).show();
+
+        }
+
+    }
+
+    @Override
+    public void OnManagerLogin() {
+
+        managerLogin();
 
     }
 
 
 
 
-    @SuppressLint("SetTextI18n")
-    private void setTheDafYomi() {
 
-        DafYomiCalculator dafYomiCalculator = new DafYomiCalculator();
-        DafYomiDetailes todayDafYomiDetailes = dafYomiCalculator.getTodayDafYomi(this);
 
-        mDafYomiTV.setText(todayDafYomiDetailes.getMasechetName() + " " + todayDafYomiDetailes.getMasechetPage());
+
+    @Override
+    public void onAddMessageClicked() {
+
+        AddMessageDialog addMessageDialog = new AddMessageDialog();
+        addMessageDialog.showDialog(this, this);
+    }
+
+
+
+
+    @Override
+    public void onAddClicked() {
+
+
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.SECOND, 10);
+
+        AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(this, MessageReciver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
+
+        alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pendingIntent);
+
+
 
 
     }
 
 
-    private void setCurrentTime() {
+    @Override
+    public void update(Observable o, Object arg) {
 
-        TextClock textClock = mTimeTC;
-//        textClock.setFormat24Hour("dd MMM yyyy hh:mm:ss cccc");
-//        textClock.setText(textClock.getText());
+        mWallFragment.refreshMessages();
+
+    }
+
+
+    public static class MessageReciver extends BroadcastReceiver{
+
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            ObservableObject.getInstance().updateValue(intent);
+
+
+        }
 
 
     }
 
 
-    private void setCurrentEnDate() {
 
-        String currentDate = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(new Date());
-
-    }
 
 }
