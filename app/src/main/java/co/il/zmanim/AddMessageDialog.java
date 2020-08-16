@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.view.View;
 import android.widget.DatePicker;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import java.util.Calendar;
@@ -28,17 +29,8 @@ public class AddMessageDialog {
             Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
             dialog.show();
 
-            
-            dialog.findViewById(R.id.AMD_add_BTN).setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-            
-                    
-                    mListener.onAddClicked();
-                    
-                }
-            });
-            
+
+            final EditText message = dialog.findViewById(R.id.AMD_message_TV);
             
             
             mStartDate = dialog.findViewById(R.id.AMD_start_time_TV);
@@ -50,6 +42,9 @@ public class AddMessageDialog {
             final int mMonth = c.get(Calendar.MONTH);
             final int mDay = c.get(Calendar.DAY_OF_MONTH);
 
+            final Calendar startDateCalender = Calendar.getInstance();
+            final Calendar endDateCalender = Calendar.getInstance();
+
 
             mStartDate.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -60,7 +55,9 @@ public class AddMessageDialog {
                         public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
 
                             mStartDate.setText(dayOfMonth + "/" + month + "/" + year);
-
+                            startDateCalender.set(Calendar.DAY_OF_MONTH, view.getDayOfMonth());
+                            startDateCalender.set(Calendar.MONTH, view.getMonth());
+                            startDateCalender.set(Calendar.YEAR, view.getYear());
                         }
                     },  mYear, mMonth, mDay);
 
@@ -78,6 +75,9 @@ public class AddMessageDialog {
                         public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
 
                             mEndDate.setText(dayOfMonth + "/" + month + "/" + year);
+                            endDateCalender.set(Calendar.DAY_OF_MONTH, view.getDayOfMonth());
+                            endDateCalender.set(Calendar.MONTH, view.getMonth());
+                            endDateCalender.set(Calendar.YEAR, view.getYear());
 
                         }
                     },  mYear, mMonth, mDay);
@@ -88,6 +88,23 @@ public class AddMessageDialog {
 
 
             });
+
+
+
+            dialog.findViewById(R.id.AMD_add_BTN).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    MessageObject messageObject = new MessageObject(message.getText().toString(), startDateCalender.getTimeInMillis(), endDateCalender.getTimeInMillis());
+
+                    mListener.onAddClicked(messageObject);
+                    dialog.dismiss();
+
+                }
+            });
+
+
+
         }
 
 
@@ -98,7 +115,7 @@ public class AddMessageDialog {
 
     public interface AddMessageDialogListener{
 
-        void onAddClicked();
+        void onAddClicked(MessageObject messageObject);
     }
 
 }

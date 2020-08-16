@@ -259,10 +259,10 @@ public class WallFragment extends Fragment {
 
 
 
-    public void refreshMessages() {
+    public void refreshMessages(String message) {
 
 
-
+        mMessagesTv.setText(message);
 
 
     }

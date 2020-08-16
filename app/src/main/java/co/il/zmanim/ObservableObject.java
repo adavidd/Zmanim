@@ -1,5 +1,7 @@
 package co.il.zmanim;
 
+import android.content.Intent;
+
 import java.util.Observable;
 
 
@@ -14,7 +16,7 @@ public class ObservableObject extends Observable {
     private ObservableObject() {
     }
 
-    public void updateValue(Object data) {
+    public void updateValue(Intent data) {
         synchronized (this) {
             setChanged();
             notifyObservers(data);

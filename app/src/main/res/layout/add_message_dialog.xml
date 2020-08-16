@@ -11,6 +11,7 @@
 
 
     <EditText
+        android:id="@+id/AMD_message_TV"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:hint="@string/add_message"

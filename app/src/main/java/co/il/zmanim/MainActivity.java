@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements ManagerLoginDialo
     private ZemanimObject zemanimObject;
     private WallFragment mWallFragment;
     private ManagerFragment mManagerFragment;
+    private MessageDatabase messageDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,24 +68,17 @@ public class MainActivity extends AppCompatActivity implements ManagerLoginDialo
             @Override
             public void run() {
 
-                dataBaseTest();
+                createDataBase();
             }
         }).start();
     }
 
 
-    private void dataBaseTest() {
+    private void createDataBase() {
 
-        MessageDatabase messageDatabase = MessageDatabase.getInstance(this);
+
+        messageDatabase = MessageDatabase.getInstance(this);
         messageDatabase.messageDao().getMessagesList();
-
-        MessageObject messageObject = new MessageObject("asdasd", 21323,3123213);
-        messageDatabase.messageDao().insertMessage(messageObject);
-
-
-        messageDatabase.messageDao().getMessagesList();
-
-
 
     }
 
@@ -269,19 +263,25 @@ public class MainActivity extends AppCompatActivity implements ManagerLoginDialo
 
 
     @Override
-    public void onAddClicked() {
+    public void onAddClicked(final MessageObject messageObject) {
 
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                 messageDatabase.messageDao().insertMessage(messageObject);
+            }
+        }).start();
 
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.SECOND, 10);
 
         AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(this, MessageReciver.class);
+        intent.putExtra("MESSAGE", messageObject.getMessage());
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
 
         alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pendingIntent);
-
-
 
 
     }
@@ -290,7 +290,7 @@ public class MainActivity extends AppCompatActivity implements ManagerLoginDialo
     @Override
     public void update(Observable o, Object arg) {
 
-        mWallFragment.refreshMessages();
+        mWallFragment.refreshMessages(((Intent) arg).getStringExtra("MESSAGE"));
 
     }
 

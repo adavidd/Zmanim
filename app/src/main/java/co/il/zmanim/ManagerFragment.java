@@ -14,8 +14,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+
+import co.il.zmanim.room.MessageDatabase;
 
 
 public class ManagerFragment extends Fragment {
@@ -112,11 +118,29 @@ public class ManagerFragment extends Fragment {
 
     private void setMessageRecyclerView() {
 
+        final MessageDatabase messageDatabase = MessageDatabase.getInstance(getContext());
 
         mRecyclerView = getView().findViewById(R.id.FM_recycler_RV);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mMessageAdpater = new MessageAdapter(getContext());
-        mRecyclerView.setAdapter(mMessageAdpater);
+        final List<MessageObject> messageObjectList = new ArrayList<>();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                messageObjectList.addAll(messageDatabase.messageDao().getMessagesList());
+
+                Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        mMessageAdpater = new MessageAdapter(getContext(), messageObjectList);
+                        mRecyclerView.setAdapter(mMessageAdpater);
+                    }
+                });
+            }
+        }).start();
+
 
 
     }
@@ -143,9 +167,14 @@ public class ManagerFragment extends Fragment {
 
     public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHolder> {
 
-        MessageAdapter(Context context) {
 
+        private final Context mContext;
+        private final List<MessageObject> mMessageList;
 
+        MessageAdapter(Context context, List<MessageObject> messagesList) {
+
+                mContext = context;
+                mMessageList = messagesList;
         }
 
         @NonNull
@@ -159,20 +188,66 @@ public class ManagerFragment extends Fragment {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        public void onBindViewHolder(@NonNull ViewHolder holder, final int position) {
 
+            holder.updateItem(mMessageList.get(position));
+
+            holder.mRemoveMessage.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            MessageDatabase messageDatabase = MessageDatabase.getInstance(getContext());
+                            messageDatabase.messageDao().deleteMessage(mMessageList.get(position));
+                            Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+
+                                    mMessageList.remove(position);
+                                    notifyDataSetChanged();
+                                }
+                            });
+
+                        }
+                    }).start();
+
+
+
+                }
+            });
         }
 
         @Override
         public int getItemCount() {
-            return 5;
+            return mMessageList.size();
         }
 
 
         class ViewHolder extends RecyclerView.ViewHolder {
 
+            private final TextView mMessage;
+            private final Button mRemoveMessage;
+
             ViewHolder(@NonNull View itemView) {
                 super(itemView);
+
+                mMessage = itemView.findViewById(R.id.MI_message_TV);
+                mRemoveMessage = itemView.findViewById(R.id.MI_remove_Btn);
+            }
+
+
+            public void updateItem(MessageObject messageObject) {
+
+
+                mMessage.setText(messageObject.getMessage());
+
+
+
+
+
             }
         }
     }

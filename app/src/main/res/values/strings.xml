@@ -12,6 +12,7 @@
     <string name="Location_setting">עריכת מיקום</string>
     <string name="add_message">הוסף הודעה</string>
     <string name="add">הוסף</string>
+    <string name="remove">הסר</string>
 
 
 </resources>
